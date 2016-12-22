@@ -41,8 +41,8 @@ float scaleFactor = 1.1;
 int minNeighbors = 2;
 int minSizeWidth = 6;
 int minSizeHeight = 16;
-int maxSizeWidth = 60;
-int maxSizeHeight = 160;
+int maxSizeWidth = 120;
+int maxSizeHeight = 320;
 
 int main()
 {
