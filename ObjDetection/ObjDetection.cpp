@@ -27,6 +27,7 @@ void matrixTime();
 bool callMethod(int choise);
 void initSession();
 void setCascade();
+void setCascadeParams();
 
 /** Global variables */
 String cascade_name = "cascade";
@@ -36,8 +37,12 @@ String window_name = "Capture - Pedestrian detection";
 * @function main
 */
 
-
-
+float scaleFactor = 1.1;
+int minNeighbors = 2;
+int minSizeWidth = 6;
+int minSizeHeight = 16;
+int maxSizeWidth = 60;
+int maxSizeHeight = 160;
 
 int main()
 {
@@ -95,10 +100,14 @@ bool callMethod(int choise) {
 		return true;
 		break;
 	case 2:
-		readFromCamera();
+		setCascadeParams();
 		return true;
 		break;
 	case 3:
+		readFromCamera();
+		return true;
+		break;
+	case 4:
 		readFromVideo();
 		return true;
 	default:
@@ -112,7 +121,7 @@ void initSession()
 {
 	const string ch = "Пожалуйста, сделайте выбор --> ";
 	stringstream menu;
-	menu << "0. Выход" << endl << "1. Задать каскад" << endl << "2. Распознавание с камеры" << endl << "3. Распознавание с видео" << endl;
+	menu << "0. Выход" << endl << "1. Задать классификатор" << endl << "2. Задать параметры классификатора" << endl << "3. Распознавание с камеры" << endl << "4. Распознавание с видео" << endl;
 
 
 	cout << menu.str().c_str() << ch.c_str();
@@ -124,7 +133,6 @@ void initSession()
 		cin >> choise;
 	}
 	while (callMethod(choise)) {
-		system("pause");
 		system("cls");
 		cout << menu.str().c_str() << ch.c_str();
 		cin >> choise;
@@ -142,6 +150,24 @@ void setCascade() {
 	string name;
 	cin >> name;
 	cascade_name = name.c_str();
+	if (!cascade.load(cascade_name)) { cout << "Не удалось загрузить классификатор! Проверьте путь к файлу!" << endl; }
+	else cout << "Классификатор успешно задан!";
+}
+
+
+void setCascadeParams() {
+	cout << "Введите значение scaleFactor: ";
+	cin >> scaleFactor;
+	cout << "Введите значение minNeighbors: ";
+	cin >> minNeighbors;
+	cout << "Введите значение minSizeWidth: ";
+	cin >> minSizeWidth;
+	cout << "Введите значение minSizeHeight: ";
+	cin >> minSizeHeight;
+	cout << "Введите значение maxSizeWidth: ";
+	cin >> maxSizeWidth;
+	cout << "Введите значение maxSizeHeight: ";
+	cin >> maxSizeHeight;
 }
 
 
@@ -151,7 +177,6 @@ int readFromVideo() {
 	}
 	CvCapture* capture = 0;
 	IplImage *frame = 0;
-	if (!cascade.load(cascade_name)) { printf("--(!)Error loading face cascade\n"); return -1; };
 
 	cout << "Введите путь к файлу с видео: ";
 	string name;
@@ -159,9 +184,6 @@ int readFromVideo() {
 	const char* filename = name.c_str();
 
 	printf("[i] file: %s\n", filename);
-
-	// окно для отображения картинки
-	cvNamedWindow("original", CV_WINDOW_AUTOSIZE);
 
 	// получаем информацию о видео-файле
 	capture = cvCreateFileCapture(filename);
@@ -180,6 +202,7 @@ int readFromVideo() {
 
 		char c = cvWaitKey(7);
 		if (c == 27) { // если нажата ESC - выходим
+			destroyAllWindows();
 			break;
 		}
 	}
@@ -187,7 +210,6 @@ int readFromVideo() {
 	// освобождаем ресурсы
 	cvReleaseCapture(&capture);
 	// удаляем окно
-	cvDestroyWindow("original");
 	return 0;
 }
 
@@ -219,7 +241,10 @@ int readFromCamera() {
 
 		//-- bail out if escape was pressed
 		int c = waitKey(1);
-		if ((char)c == 27) { break; }
+		if ((char)c == 27) { 
+			destroyAllWindows();
+			break; 
+		}
 	}
 }
 
@@ -238,7 +263,7 @@ void detectAndDisplay(Mat frame)
 
 	cv::ocl::setUseOpenCL(false);
 	//-- Detect faces
-	cascade.detectMultiScale(frame_gray2, faces, 1.1, 2, 0, Size(6,16), Size(60, 160));
+	cascade.detectMultiScale(frame_gray2, faces, scaleFactor, minNeighbors, 0, Size(minSizeWidth,minSizeHeight), Size(maxSizeWidth, maxSizeHeight));
 	
 	for (size_t i = 0; i < faces.size(); i++)
 	{
